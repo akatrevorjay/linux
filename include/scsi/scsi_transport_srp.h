@@ -23,11 +23,17 @@ struct srp_rport {
 
 	/* for initiator drivers */
 
-	void *lld_data;	/* LLD private data */
+	void			*lld_data;	/* LLD private data */
+
+	int			fast_io_fail_tmo;
+	unsigned		dev_loss_tmo;
+	struct delayed_work	fast_io_fail_work;
+	struct delayed_work	dev_loss_work;
 };
 
 struct srp_function_template {
 	/* for initiator drivers */
+	void (*terminate_rport_io)(struct srp_rport *rport);
 	void (*rport_delete)(struct srp_rport *rport);
 	/* for target drivers */
 	int (* tsk_mgmt_response)(struct Scsi_Host *, u64, u64, int);
@@ -41,6 +47,9 @@ extern void srp_release_transport(struct scsi_transport_template *);
 extern struct srp_rport *srp_rport_add(struct Scsi_Host *,
 				       struct srp_rport_identifiers *);
 extern void srp_rport_del(struct srp_rport *);
+extern void srp_start_tl_fail_timers(struct srp_rport *rport);
+extern void srp_stop_tl_fail_timers(struct srp_rport *rport);
+extern void srp_stop_rport(struct srp_rport *rport);
 
 extern void srp_remove_host(struct Scsi_Host *);
 
