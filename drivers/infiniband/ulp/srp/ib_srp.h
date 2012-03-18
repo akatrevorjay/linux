@@ -76,6 +76,9 @@ enum {
 
 	SRP_MAP_ALLOW_FMR	= 0,
 	SRP_MAP_NO_FMR		= 1,
+
+	SRP_LAST_RECV		= 0,
+	SRP_LAST_SEND		= 0,
 };
 
 enum srp_target_state {
@@ -180,6 +183,9 @@ struct srp_target_port {
 	struct completion	done;
 	int			status;
 	bool			qp_in_error;
+	bool			last_recv_wqe;
+	bool			last_send_wqe;
+	wait_queue_head_t	qp_wq;
 
 	struct completion	tsk_mgmt_done;
 	u8			tsk_mgmt_status;
