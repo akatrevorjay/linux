@@ -1344,6 +1344,7 @@ static int srp_queuecommand(struct Scsi_Host *shost, struct scsi_cmnd *scmnd)
 
 	if (target->state == SRP_TARGET_DEAD ||
 	    target->state == SRP_TARGET_REMOVED ||
+	    !target->connected ||
 	    target->qp_in_error) {
 		scmnd->result = DID_BAD_TARGET << 16;
 		scmnd->scsi_done(scmnd);
@@ -1696,6 +1697,7 @@ static int srp_send_tsk_mgmt(struct srp_target_port *target,
 
 	if (target->state == SRP_TARGET_DEAD ||
 	    target->state == SRP_TARGET_REMOVED ||
+	    !target->connected ||
 	    target->qp_in_error)
 		return -1;
 
