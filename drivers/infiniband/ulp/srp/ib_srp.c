@@ -1342,9 +1342,7 @@ static int srp_queuecommand(struct Scsi_Host *shost, struct scsi_cmnd *scmnd)
 	unsigned long flags;
 	int len;
 
-	if (target->state == SRP_TARGET_REMOVED ||
-	    !target->connected ||
-	    target->qp_in_error) {
+	if (!target->connected || target->qp_in_error) {
 		scmnd->result = DID_BAD_TARGET << 16;
 		scmnd->scsi_done(scmnd);
 		return 0;
@@ -1694,9 +1692,7 @@ static int srp_send_tsk_mgmt(struct srp_target_port *target,
 	struct srp_iu *iu;
 	struct srp_tsk_mgmt *tsk_mgmt;
 
-	if (target->state == SRP_TARGET_REMOVED ||
-	    !target->connected ||
-	    target->qp_in_error)
+	if (!target->connected || target->qp_in_error)
 		return -1;
 
 	init_completion(&target->tsk_mgmt_done);
