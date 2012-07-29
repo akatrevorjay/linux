@@ -108,6 +108,7 @@ static void vga_switcheroo_enable(void)
 		ret = vgasr_priv.handler->get_client_id(client->pdev);
 		if (ret < 0)
 			return;
+		client->id = ret;
 
 		if (vgasr_priv.handler->client_active) {
 			active = vgasr_priv.handler->client_active(client->id);
@@ -117,7 +118,7 @@ static void vga_switcheroo_enable(void)
 			 * but the client itself doesn't, update state
 			 */
 
-			if (active && !client->active) {
+			if (active && !client->active && client->fb_info) {
 				struct fb_event event;
 				event.info = client->fb_info;
 				fb_notifier_call_chain(FB_EVENT_REMAP_ALL_CONSOLE, &event);
@@ -125,8 +126,6 @@ static void vga_switcheroo_enable(void)
 
 			client->active = active;
 		}
-
-		client->id = ret;
 	}
 	vga_switcheroo_debugfs_init(&vgasr_priv);
 	vgasr_priv.active = true;
