@@ -34,6 +34,7 @@ struct vga_switcheroo_handler {
 			   enum vga_switcheroo_state state);
 	int (*init)(void);
 	int (*get_client_id)(struct pci_dev *pdev);
+	bool (*client_active)(enum vga_switcheroo_client_id id);
 };
 
 struct vga_switcheroo_client_ops {

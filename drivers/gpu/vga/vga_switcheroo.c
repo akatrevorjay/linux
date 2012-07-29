@@ -101,11 +101,30 @@ static void vga_switcheroo_enable(void)
 	vgasr_priv.handler->init();
 
 	list_for_each_entry(client, &vgasr_priv.clients, list) {
+		bool active;
+
 		if (client->id != -1)
 			continue;
 		ret = vgasr_priv.handler->get_client_id(client->pdev);
 		if (ret < 0)
 			return;
+
+		if (vgasr_priv.handler->client_active) {
+			active = vgasr_priv.handler->client_active(client->id);
+
+			/*
+			 * If the hardware believes this client is active,
+			 * but the client itself doesn't, update state
+			 */
+
+			if (active && !client->active) {
+				struct fb_event event;
+				event.info = client->fb_info;
+				fb_notifier_call_chain(FB_EVENT_REMAP_ALL_CONSOLE, &event);
+			}
+
+			client->active = active;
+		}
 
 		client->id = ret;
 	}
