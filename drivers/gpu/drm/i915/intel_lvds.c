@@ -894,6 +894,59 @@ static bool intel_lvds_supported(struct drm_device *dev)
 	return IS_MOBILE(dev) && !IS_I830(dev);
 }
 
+bool intel_lvds_get_edid(struct drm_device *dev)
+{
+	struct drm_i915_private *dev_priv = dev->dev_private;
+	struct drm_connector *connector = dev_priv->int_lvds_connector;
+	struct intel_lvds *intel_lvds;
+	struct drm_display_mode *scan; /* *modes, *bios_mode; */
+	u8 pin;	
+
+	if (!connector)
+		return false;
+
+	intel_lvds = intel_attached_lvds(connector);
+
+	pin = GMBUS_PORT_PANEL;
+
+	intel_lvds->edid = drm_get_edid(connector,
+					intel_gmbus_get_adapter(dev_priv,
+								pin));
+	if (intel_lvds->edid) {
+		if (drm_add_edid_modes(connector,
+				       intel_lvds->edid)) {
+			drm_mode_connector_update_edid_property(connector,
+								intel_lvds->edid);
+		} else {
+			kfree(intel_lvds->edid);
+			intel_lvds->edid = NULL;
+		}
+	}
+
+	if (!intel_lvds->edid) {
+		/* Didn't get an EDID, so
+		 * Set wide sync ranges so we get all modes
+		 * handed to valid_mode for checking
+		 */
+		connector->display_info.min_vfreq = 0;
+		connector->display_info.max_vfreq = 200;
+		connector->display_info.min_hfreq = 0;
+		connector->display_info.max_hfreq = 200;
+	}
+
+	list_for_each_entry(scan, &connector->probed_modes, head) {
+		if (scan->type & DRM_MODE_TYPE_PREFERRED) {
+			intel_lvds->fixed_mode =
+				drm_mode_duplicate(dev, scan);
+			intel_find_lvds_downclock(dev,
+						  intel_lvds->fixed_mode,
+						  connector);
+			return true;
+		}
+	}
+	return false;
+}
+
 /**
  * intel_lvds_init - setup LVDS connectors on this device
  * @dev: drm device
@@ -909,7 +962,6 @@ bool intel_lvds_init(struct drm_device *dev)
 	struct intel_connector *intel_connector;
 	struct drm_connector *connector;
 	struct drm_encoder *encoder;
-	struct drm_display_mode *scan; /* *modes, *bios_mode; */
 	struct drm_crtc *crtc;
 	u32 lvds;
 	int pipe;
@@ -976,6 +1028,8 @@ bool intel_lvds_init(struct drm_device *dev)
 	connector->interlace_allowed = false;
 	connector->doublescan_allowed = false;
 
+	dev_priv->int_lvds_connector = connector;
+
 	/* create the scaling mode property */
 	drm_mode_create_scaling_mode_property(dev);
 	/*
@@ -1000,40 +1054,8 @@ bool intel_lvds_init(struct drm_device *dev)
 	 * Attempt to get the fixed panel mode from DDC.  Assume that the
 	 * preferred mode is the right one.
 	 */
-	intel_lvds->edid = drm_get_edid(connector,
-					intel_gmbus_get_adapter(dev_priv,
-								pin));
-	if (intel_lvds->edid) {
-		if (drm_add_edid_modes(connector,
-				       intel_lvds->edid)) {
-			drm_mode_connector_update_edid_property(connector,
-								intel_lvds->edid);
-		} else {
-			kfree(intel_lvds->edid);
-			intel_lvds->edid = NULL;
-		}
-	}
-	if (!intel_lvds->edid) {
-		/* Didn't get an EDID, so
-		 * Set wide sync ranges so we get all modes
-		 * handed to valid_mode for checking
-		 */
-		connector->display_info.min_vfreq = 0;
-		connector->display_info.max_vfreq = 200;
-		connector->display_info.min_hfreq = 0;
-		connector->display_info.max_hfreq = 200;
-	}
-
-	list_for_each_entry(scan, &connector->probed_modes, head) {
-		if (scan->type & DRM_MODE_TYPE_PREFERRED) {
-			intel_lvds->fixed_mode =
-				drm_mode_duplicate(dev, scan);
-			intel_find_lvds_downclock(dev,
-						  intel_lvds->fixed_mode,
-						  connector);
-			goto out;
-		}
-	}
+	if (intel_lvds_get_edid(dev))
+		goto out;
 
 	/* Failed to get EDID, what about VBT? */
 	if (dev_priv->lfp_lvds_vbt_mode) {
@@ -1112,7 +1134,6 @@ out:
 		dev_priv->lid_notifier.notifier_call = NULL;
 	}
 	/* keep the LVDS connector */
-	dev_priv->int_lvds_connector = connector;
 	drm_sysfs_connector_add(connector);
 
 	intel_panel_setup_backlight(dev);
@@ -1121,6 +1142,7 @@ out:
 
 failed:
 	DRM_DEBUG_KMS("No LVDS modes found, disabling.\n");
+	dev_priv->int_lvds_connector = NULL;
 	drm_connector_cleanup(connector);
 	drm_encoder_cleanup(encoder);
 	kfree(intel_lvds);
