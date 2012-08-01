@@ -603,17 +603,23 @@ static void srp_del_scsi_host_attr(struct Scsi_Host *shost)
 static void srp_remove_target(struct srp_target_port *target)
 {
 	struct Scsi_Host *shost = target->scsi_host;
+	struct srp_rport *rport = target->rport;
+	bool scsi_host_added = false;
 
 	WARN_ON(target->state != SRP_TARGET_REMOVED);
 
 	mutex_lock(&target->mutex);
-	if (target->scsi_host_added) {
+	swap(target->scsi_host_added, scsi_host_added);
+	mutex_unlock(&target->mutex);
+
+	if (scsi_host_added) {
 		srp_del_scsi_host_attr(shost);
+		srp_stop_rport(rport);
 		srp_remove_host(shost);
 		scsi_remove_host(shost);
 	}
-	mutex_unlock(&target->mutex);
 	srp_disconnect_target(target);
+	cancel_work_sync(&target->tl_err_work);
 
 	srp_free_target_ib(target);
 	srp_free_req_data(target);
@@ -825,9 +831,20 @@ static int srp_reconnect_target(struct srp_target_port *target)
 		return -EAGAIN;
 	}
 
-	scsi_target_block(&shost->shost_gendev);
+	mutex_lock(&target->mutex);
+	if (target->scsi_host_added)
+		scsi_target_block(&shost->shost_gendev);
+	target->reconnecting = true;
+	mutex_unlock(&target->mutex);
 
 	srp_disconnect_target(target);
+	cancel_work_sync(&target->tl_err_work);
+
+	mutex_lock(&target->mutex);
+	if (target->scsi_host_added)
+		srp_stop_tl_fail_timers(target->rport);
+	mutex_unlock(&target->mutex);
+
 	/*
 	 * Now get a new local CM ID so that we avoid confusing the
 	 * target in case things are really fouled up.
@@ -859,12 +876,18 @@ static int srp_reconnect_target(struct srp_target_port *target)
 	if (ret)
 		goto err;
 
+	mutex_lock(&target->mutex);
+	target->reconnecting = false;
 	scsi_target_unblock(&shost->shost_gendev, SDEV_RUNNING);
+	mutex_unlock(&target->mutex);
 
 	return ret;
 
 err:
+	mutex_lock(&target->mutex);
+	target->reconnecting = false;
 	scsi_target_unblock(&shost->shost_gendev, SDEV_TRANSPORT_OFFLINE);
+	mutex_unlock(&target->mutex);
 
 	shost_printk(KERN_ERR, target->scsi_host,
 		     PFX "reconnect failed (%d), removing target port.\n", ret);
@@ -1422,15 +1445,32 @@ static void srp_handle_recv(struct srp_target_port *target, struct ib_wc *wc)
 			     PFX "Recv failed with error code %d\n", res);
 }
 
+/**
+ * srp_tl_err_work - Start the transport layer failure timers.
+ */
+static void srp_tl_err_work(struct work_struct *work)
+{
+	struct srp_target_port *target;
+
+	target = container_of(work, struct srp_target_port, tl_err_work);
+
+	mutex_lock(&target->mutex);
+	if (target->scsi_host_added)
+		srp_start_tl_fail_timers(target->rport);
+	mutex_unlock(&target->mutex);
+}
+
 static void srp_handle_qp_err(enum ib_wc_status wc_status,
 			      enum ib_wc_opcode wc_opcode,
 			      struct srp_target_port *target)
 {
-	if (target->connected && !target->qp_in_error)
+	if (target->connected && !target->qp_in_error) {
 		shost_printk(KERN_ERR, target->scsi_host,
 			     PFX "failed %s status %d\n",
 			     wc_opcode & IB_WC_RECV ? "receive" : "send",
 			     wc_status);
+		queue_work(system_long_wq, &target->tl_err_work);
+	}
 	target->qp_in_error = true;
 }
 
@@ -1797,14 +1837,17 @@ static int srp_cm_handler(struct ib_cm_id *cm_id, struct ib_cm_event *event)
 		if (ib_send_cm_drep(cm_id, NULL, 0))
 			shost_printk(KERN_ERR, target->scsi_host,
 				     PFX "Sending CM DREP failed\n");
+		queue_work(system_long_wq, &target->tl_err_work);
 		break;
 
 	case IB_CM_TIMEWAIT_EXIT:
 		shost_printk(KERN_ERR, target->scsi_host,
 			     PFX "connection closed\n");
 
-		if (!srp_conn_unique(target->srp_host, target))
+		mutex_lock(&target->mutex);
+		if (!target->reconnecting)
 			srp_queue_remove_work(target);
+		mutex_unlock(&target->mutex);
 
 		comp = 1;
 		target->status = 0;
@@ -2105,6 +2148,7 @@ static int srp_add_target(struct srp_host *host, struct srp_target_port *target)
 	}
 
 	rport->lld_data = target;
+	target->rport = rport;
 
 	return 0;
 }
@@ -2392,6 +2436,7 @@ static ssize_t srp_create_target(struct device *dev,
 			     target->cmd_sg_cnt * sizeof (struct srp_direct_buf);
 
 	mutex_init(&target->mutex);
+	INIT_WORK(&target->tl_err_work, srp_tl_err_work);
 	INIT_WORK(&target->remove_work, srp_remove_work);
 	spin_lock_init(&target->lock);
 	INIT_LIST_HEAD(&target->free_tx);
@@ -2439,6 +2484,7 @@ static ssize_t srp_create_target(struct device *dev,
 		goto err_free_ib;
 
 	target->connected = false;
+	target->reconnecting = false;
 	target->rq_tmo_jiffies = 1 * HZ;
 	target->state = SRP_TARGET_CONNECTING;
 	target->scsi_host_added = false;
