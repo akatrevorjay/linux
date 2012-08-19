@@ -56,6 +56,8 @@
 #include <linux/oom.h>
 #include <linux/compat.h>
 
+#include <trace/events/fs.h>
+
 #include <asm/uaccess.h>
 #include <asm/mmu_context.h>
 #include <asm/tlb.h>
@@ -781,6 +783,8 @@ struct file *open_exec(const char *name)
 
 	fsnotify_open(file);
 
+	trace_open_exec(name);
+
 	err = deny_write_access(file);
 	if (err)
 		goto exit;
@@ -1020,7 +1024,7 @@ static void flush_old_files(struct files_struct * files)
 		unsigned long set, i;
 
 		j++;
-		i = j * __NFDBITS;
+		i = j * BITS_PER_LONG;
 		fdt = files_fdtable(files);
 		if (i >= fdt->max_fds)
 			break;

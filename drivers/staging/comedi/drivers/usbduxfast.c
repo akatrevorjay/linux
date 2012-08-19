@@ -53,6 +53,7 @@
 #define DRIVER_AUTHOR "Bernd Porr, BerndPorr@f2s.com"
 #define DRIVER_DESC "USB-DUXfast, BerndPorr@f2s.com"
 #define BOARDNAME "usbduxfast"
+#define FIRMWARE "usbduxfast_firmware.bin"
 
 /*
  * timeout for the USB-transfer
@@ -1578,7 +1579,7 @@ static int usbduxfastsub_probe(struct usb_interface *uinterf,
 
 	ret = request_firmware_nowait(THIS_MODULE,
 				      FW_ACTION_HOTPLUG,
-				      "usbduxfast_firmware.bin",
+				      FIRMWARE,
 				      &udev->dev,
 				      GFP_KERNEL,
 				      usbduxfastsub + index,
@@ -1804,3 +1805,4 @@ module_exit(exit_usbduxfast);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
+MODULE_FIRMWARE(FIRMWARE);

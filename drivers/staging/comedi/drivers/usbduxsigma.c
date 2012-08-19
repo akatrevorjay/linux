@@ -63,6 +63,7 @@ Status: testing
 #include "../comedidev.h"
 
 #define BOARDNAME "usbduxsigma"
+#define FIRMWARE "usbduxsigma_firmware.bin"
 
 /* timeout for the USB-transfer in ms*/
 #define BULK_TIMEOUT 1000
@@ -2588,7 +2589,7 @@ static int usbduxsigma_probe(struct usb_interface *uinterf,
 
 	ret = request_firmware_nowait(THIS_MODULE,
 				      FW_ACTION_HOTPLUG,
-				      "usbduxsigma_firmware.bin",
+				      FIRMWARE,
 				      &udev->dev,
 				      GFP_KERNEL,
 				      usbduxsub + index,
@@ -2865,3 +2866,4 @@ module_exit(exit_usbduxsigma);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
+MODULE_FIRMWARE(FIRMWARE);

@@ -349,6 +349,7 @@ config ARCH_HIGHBANK
 	select ARM_TIMER_SP804
 	select CACHE_L2X0
 	select CLKDEV_LOOKUP
+	select COMMON_CLK
 	select CPU_V7
 	select GENERIC_CLOCKEVENTS
 	select HAVE_ARM_SCU
@@ -2264,6 +2265,8 @@ endmenu
 source "net/Kconfig"
 
 source "drivers/Kconfig"
+
+source "ubuntu/Kconfig"
 
 source "fs/Kconfig"
 

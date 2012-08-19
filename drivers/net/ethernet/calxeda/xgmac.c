@@ -210,7 +210,7 @@
 #define DMA_INTR_ENA_TIE	0x00000001	/* Transmit Interrupt */
 
 #define DMA_INTR_NORMAL		(DMA_INTR_ENA_NIE | DMA_INTR_ENA_RIE | \
-				 DMA_INTR_ENA_TUE)
+				 DMA_INTR_ENA_TUE | DMA_INTR_ENA_TIE)
 
 #define DMA_INTR_ABNORMAL	(DMA_INTR_ENA_AIE | DMA_INTR_ENA_FBE | \
 				 DMA_INTR_ENA_RWE | DMA_INTR_ENA_RSE | \
@@ -264,7 +264,7 @@
 #define XGMAC_OMR_FEF		0x00000080	/* Forward Error Frames */
 #define XGMAC_OMR_DT		0x00000040	/* Drop TCP/IP csum Errors */
 #define XGMAC_OMR_RSF		0x00000020	/* RX FIFO Store and Forward */
-#define XGMAC_OMR_RTC		0x00000010	/* RX Threshhold Ctrl */
+#define XGMAC_OMR_RTC_256	0x00000018	/* RX Threshhold Ctrl */
 #define XGMAC_OMR_RTC_MASK	0x00000018	/* RX Threshhold Ctrl MASK */
 
 /* XGMAC HW Features Register */
@@ -332,7 +332,7 @@
 #define DESC_BUFFER2_SZ_OFFSET	16
 
 struct xgmac_dma_desc {
-	__le32 flags;
+	volatile __le32 flags;
 	__le32 buf_size;
 	__le32 buf1_addr;		/* Buffer 1 Address Pointer */
 	__le32 buf2_addr;		/* Buffer 2 Address Pointer */
@@ -451,15 +451,20 @@ static inline int desc_get_owner(struct xgmac_dma_desc *p)
 static inline void desc_set_rx_owner(struct xgmac_dma_desc *p)
 {
 	/* Clear all fields and set the owner */
+	wmb();
 	p->flags = cpu_to_le32(DESC_OWN);
+	wmb();
 }
 
 static inline void desc_set_tx_owner(struct xgmac_dma_desc *p, u32 flags)
 {
-	u32 tmpflags = le32_to_cpu(p->flags);
+	u32 tmpflags;
+	wmb();
+	tmpflags = le32_to_cpu(p->flags);
 	tmpflags &= TXDESC_END_RING;
 	tmpflags |= flags | DESC_OWN;
 	p->flags = cpu_to_le32(tmpflags);
+	wmb();
 }
 
 static inline int desc_get_tx_ls(struct xgmac_dma_desc *p)
@@ -671,26 +676,23 @@ static void xgmac_rx_refill(struct xgmac_priv *priv)
 
 		p = priv->dma_rx + entry;
 
-		if (priv->rx_skbuff[entry] != NULL)
-			continue;
+		if (priv->rx_skbuff[entry] == NULL) {
+			skb = __skb_dequeue(&priv->rx_recycle);
+			if (skb == NULL)
+				skb = netdev_alloc_skb(priv->dev, priv->dma_buf_sz);
+			if (unlikely(skb == NULL))
+				break;
 
-		skb = __skb_dequeue(&priv->rx_recycle);
-		if (skb == NULL)
-			skb = netdev_alloc_skb(priv->dev, priv->dma_buf_sz);
-		if (unlikely(skb == NULL))
-			break;
-
-		priv->rx_skbuff[entry] = skb;
-		paddr = dma_map_single(priv->device, skb->data,
-					 priv->dma_buf_sz, DMA_FROM_DEVICE);
-		desc_set_buf_addr(p, paddr, priv->dma_buf_sz);
+			priv->rx_skbuff[entry] = skb;
+			paddr = dma_map_single(priv->device, skb->data,
+					       priv->dma_buf_sz, DMA_FROM_DEVICE);
+			desc_set_buf_addr(p, paddr, priv->dma_buf_sz);
+		}
 
 		netdev_dbg(priv->dev, "rx ring: head %d, tail %d\n",
 			priv->rx_head, priv->rx_tail);
 
 		priv->rx_head = dma_ring_incr(priv->rx_head, DMA_RX_RING_SZ);
-		/* Ensure descriptor is in memory before handing to h/w */
-		wmb();
 		desc_set_rx_owner(p);
 	}
 }
@@ -933,6 +935,7 @@ static void xgmac_tx_err(struct xgmac_priv *priv)
 	desc_init_tx_desc(priv->dma_tx, DMA_TX_RING_SZ);
 	priv->tx_tail = 0;
 	priv->tx_head = 0;
+	writel(priv->dma_tx_phy, priv->base + XGMAC_DMA_TX_BASE_ADDR);
 	writel(reg | DMA_CONTROL_ST, priv->base + XGMAC_DMA_CONTROL);
 
 	writel(DMA_STATUS_TU | DMA_STATUS_TPS | DMA_STATUS_NIS | DMA_STATUS_AIS,
@@ -972,7 +975,7 @@ static int xgmac_hw_init(struct net_device *dev)
 	writel(DMA_INTR_DEFAULT_MASK, ioaddr + XGMAC_DMA_INTR_ENA);
 
 	/* XGMAC requires AXI bus init. This is a 'magic number' for now */
-	writel(0x000100E, ioaddr + XGMAC_DMA_AXI_BUS);
+	writel(0x0077000E, ioaddr + XGMAC_DMA_AXI_BUS);
 
 	ctrl |= XGMAC_CONTROL_DDIC | XGMAC_CONTROL_JE | XGMAC_CONTROL_ACS |
 		XGMAC_CONTROL_CAR;
@@ -984,7 +987,8 @@ static int xgmac_hw_init(struct net_device *dev)
 	writel(value, ioaddr + XGMAC_DMA_CONTROL);
 
 	/* Set the HW DMA mode and the COE */
-	writel(XGMAC_OMR_TSF | XGMAC_OMR_RSF | XGMAC_OMR_RFD | XGMAC_OMR_RFA,
+	writel(XGMAC_OMR_TSF | XGMAC_OMR_RFD | XGMAC_OMR_RFA |
+		XGMAC_OMR_RTC_256,
 		ioaddr + XGMAC_OMR);
 
 	/* Reset the MMC counters */

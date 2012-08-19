@@ -556,7 +556,6 @@ struct usb_device {
 	struct usb3_lpm_parameters u1_params;
 	struct usb3_lpm_parameters u2_params;
 	unsigned lpm_disable_count;
-	unsigned hub_initiated_lpm_disable_count;
 };
 #define	to_usb_device(d) container_of(d, struct usb_device, dev)
 
@@ -628,6 +627,9 @@ extern void usb_enable_lpm(struct usb_device *udev);
 /* Same as above, but these functions lock/unlock the bandwidth_mutex. */
 extern int usb_unlocked_disable_lpm(struct usb_device *udev);
 extern void usb_unlocked_enable_lpm(struct usb_device *udev);
+
+extern int usb_disable_ltm(struct usb_device *udev);
+extern void usb_enable_ltm(struct usb_device *udev);
 
 /*-------------------------------------------------------------------------*/
 
