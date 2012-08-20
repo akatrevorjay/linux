@@ -355,6 +355,7 @@ bh1770glc
 bh1780gli
 binfmt_misc
 block2mtd
+blocklayoutdriver
 blowfish-x86_64
 blowfish_common
 blowfish_generic
@@ -641,7 +642,10 @@ dlci
 dlm
 dm-bufio
 dm-crypt
+dm-delay
+dm-flakey
 dm-log
+dm-log-userspace
 dm-mirror
 dm-multipath
 dm-persistent-data
@@ -653,6 +657,7 @@ dm-round-robin
 dm-service-time
 dm-snapshot
 dm-thin-pool
+dm-verity
 dm-zero
 dm1105
 dm9601
@@ -1710,6 +1715,7 @@ mdio-bitbang
 mdio-gpio
 me4000
 me_daq
+media
 megaraid
 megaraid_mbox
 megaraid_mm
@@ -1876,6 +1882,7 @@ nfnetlink_log
 nfnetlink_queue
 nfs
 nfs_acl
+nfs_layout_nfsv41_files
 nfsd
 nftl
 ngene
@@ -1951,6 +1958,7 @@ nvme
 nvram
 nxt200x
 nxt6000
+objlayoutdriver
 ocfs2
 ocfs2_dlm
 ocfs2_dlmfs
@@ -1984,7 +1992,6 @@ osd
 osdblk
 osst
 oti6858
-output
 ov2640
 ov5642
 ov6650
@@ -2486,6 +2493,7 @@ sbc_fitpc2_wdt
 sbc_gxx
 sbe-2t3e3
 sbni
+sbp_target
 sbs
 sbs-battery
 sbshc
@@ -3201,7 +3209,6 @@ via-velocity
 via686a
 via_wdt
 viafb
-video
 videobuf-core
 videobuf-dma-contig
 videobuf-dma-sg
