@@ -38,7 +38,6 @@ fw-shipped-$(CONFIG_BNX2) += bnx2/bnx2-mips-09-6.2.1a.fw \
 			     bnx2/bnx2-mips-06-6.2.1.fw \
 			     bnx2/bnx2-rv2p-06-6.0.15.fw
 fw-shipped-$(CONFIG_CASSINI) += sun/cassini.bin
-fw-shipped-$(CONFIG_DRM_R128) += r128/r128_cce.bin
 fw-shipped-$(CONFIG_DRM_RADEON) += radeon/R100_cp.bin radeon/R200_cp.bin \
 				   radeon/R300_cp.bin radeon/R420_cp.bin \
 				   radeon/RS690_cp.bin radeon/RS600_cp.bin \
