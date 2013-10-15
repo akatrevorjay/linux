@@ -1,4 +1,4 @@
-ccflags-y += -Wno-unused-parameter
+ccflags-y += -Wno-unused-parameter -Wimplicit-function-declaration
 
 scst-y        += scst_main.o
 scst-y        += scst_pres.o
