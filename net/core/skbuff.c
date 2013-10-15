@@ -77,13 +77,13 @@ static struct kmem_cache *skbuff_fclone_cache __read_mostly;
 static void sock_pipe_buf_release(struct pipe_inode_info *pipe,
 				  struct pipe_buffer *buf)
 {
-	put_page(buf->page);
+	net_put_page(buf->page);
 }
 
 static void sock_pipe_buf_get(struct pipe_inode_info *pipe,
 				struct pipe_buffer *buf)
 {
-	get_page(buf->page);
+	net_get_page(buf->page);
 }
 
 static int sock_pipe_buf_steal(struct pipe_inode_info *pipe,
@@ -452,7 +452,7 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 		if (likely(data)) {
 			skb = build_skb(data, fragsz);
 			if (unlikely(!skb))
-				put_page(virt_to_head_page(data));
+				net_put_page(virt_to_head_page(data));
 		}
 	} else {
 		skb = __alloc_skb(length + NET_SKB_PAD, gfp_mask,
@@ -498,7 +498,7 @@ static void skb_clone_fraglist(struct sk_buff *skb)
 static void skb_free_head(struct sk_buff *skb)
 {
 	if (skb->head_frag)
-		put_page(virt_to_head_page(skb->head));
+		net_put_page(virt_to_head_page(skb->head));
 	else
 		kfree(skb->head);
 }
@@ -826,7 +826,7 @@ int skb_copy_ubufs(struct sk_buff *skb, gfp_t gfp_mask)
 		if (!page) {
 			while (head) {
 				struct page *next = (struct page *)page_private(head);
-				put_page(head);
+				net_put_page(head);
 				head = next;
 			}
 			return -ENOMEM;
@@ -1651,7 +1651,7 @@ EXPORT_SYMBOL(skb_copy_bits);
  */
 static void sock_spd_release(struct splice_pipe_desc *spd, unsigned int i)
 {
-	put_page(spd->pages[i]);
+	net_put_page(spd->pages[i]);
 }
 
 static struct page *linear_to_page(struct page *page, unsigned int *len,
@@ -1704,7 +1704,7 @@ static bool spd_fill_page(struct splice_pipe_desc *spd,
 		spd->partial[spd->nr_pages - 1].len += *len;
 		return false;
 	}
-	get_page(page);
+	net_get_page(page);
 	spd->pages[spd->nr_pages] = page;
 	spd->partial[spd->nr_pages].len = *len;
 	spd->partial[spd->nr_pages].offset = offset;
@@ -2708,7 +2708,7 @@ int skb_append_datato_frags(struct sock *sk, struct sk_buff *skb,
 				   copy);
 		frg_cnt++;
 		pfrag->offset += copy;
-		get_page(pfrag->page);
+		net_get_page(pfrag->page);
 
 		skb->truesize += copy;
 		atomic_add(copy, &sk->sk_wmem_alloc);

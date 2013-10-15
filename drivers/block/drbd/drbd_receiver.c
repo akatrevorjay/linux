@@ -130,7 +130,7 @@ static int page_chain_free(struct page *page)
 	struct page *tmp;
 	int i = 0;
 	page_chain_for_each_safe(page, tmp) {
-		put_page(page);
+		net_put_page(page);
 		++i;
 	}
 	return i;

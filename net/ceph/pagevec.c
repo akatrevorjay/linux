@@ -51,7 +51,7 @@ void ceph_put_page_vector(struct page **pages, int num_pages, bool dirty)
 	for (i = 0; i < num_pages; i++) {
 		if (dirty)
 			set_page_dirty_lock(pages[i]);
-		put_page(pages[i]);
+		net_put_page(pages[i]);
 	}
 	kfree(pages);
 }

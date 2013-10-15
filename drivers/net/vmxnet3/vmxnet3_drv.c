@@ -1360,7 +1360,7 @@ vmxnet3_rq_cleanup(struct vmxnet3_rx_queue *rq,
 					rq->buf_info[ring_idx][i].page) {
 				pci_unmap_page(adapter->pdev, rxd->addr,
 					       rxd->len, PCI_DMA_FROMDEVICE);
-				put_page(rq->buf_info[ring_idx][i].page);
+				net_put_page(rq->buf_info[ring_idx][i].page);
 				rq->buf_info[ring_idx][i].page = NULL;
 			}
 		}

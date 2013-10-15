@@ -1825,7 +1825,7 @@ bool sk_page_frag_refill(struct sock *sk, struct page_frag *pfrag)
 		}
 		if (pfrag->offset < pfrag->size)
 			return true;
-		put_page(pfrag->page);
+		net_put_page(pfrag->page);
 	}
 
 	/* We restrict high order allocations to users that can afford to wait */
@@ -2530,7 +2530,7 @@ void sk_common_release(struct sock *sk)
 	sk_refcnt_debug_release(sk);
 
 	if (sk->sk_frag.page) {
-		put_page(sk->sk_frag.page);
+		net_put_page(sk->sk_frag.page);
 		sk->sk_frag.page = NULL;
 	}
 

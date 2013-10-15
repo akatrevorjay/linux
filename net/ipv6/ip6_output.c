@@ -1443,7 +1443,7 @@ alloc_new_skb:
 				__skb_fill_page_desc(skb, i, pfrag->page,
 						     pfrag->offset, 0);
 				skb_shinfo(skb)->nr_frags = ++i;
-				get_page(pfrag->page);
+				net_get_page(pfrag->page);
 			}
 			copy = min_t(int, copy, pfrag->size - pfrag->offset);
 			if (getfrag(from,

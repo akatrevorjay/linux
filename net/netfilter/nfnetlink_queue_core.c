@@ -258,7 +258,7 @@ nfqnl_zcopy(struct sk_buff *to, const struct sk_buff *from, int len, int hlen)
 			page = virt_to_head_page(from->head);
 			offset = from->data - (unsigned char *)page_address(page);
 			__skb_fill_page_desc(to, 0, page, offset, plen);
-			get_page(page);
+			net_get_page(page);
 			j = 1;
 			len -= plen;
 		}

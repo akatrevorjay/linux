@@ -888,7 +888,7 @@ new_segment:
 		if (can_coalesce) {
 			skb_frag_size_add(&skb_shinfo(skb)->frags[i - 1], copy);
 		} else {
-			get_page(page);
+			net_get_page(page);
 			skb_fill_page_desc(skb, i, page, offset, copy);
 		}
 		skb_shinfo(skb)->tx_flags |= SKBTX_SHARED_FRAG;
@@ -1184,7 +1184,7 @@ new_segment:
 				} else {
 					skb_fill_page_desc(skb, i, pfrag->page,
 							   pfrag->offset, copy);
-					get_page(pfrag->page);
+					net_get_page(pfrag->page);
 				}
 				pfrag->offset += copy;
 			}

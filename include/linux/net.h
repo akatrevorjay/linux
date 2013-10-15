@@ -19,6 +19,7 @@
 #define _LINUX_NET_H
 
 #include <linux/stringify.h>
+#include <linux/mm.h>
 #include <linux/random.h>
 #include <linux/wait.h>
 #include <linux/fcntl.h>	/* For O_CLOEXEC and O_NONBLOCK */
@@ -269,6 +270,45 @@ extern int kernel_sendpage(struct socket *sock, struct page *page, int offset,
 extern int kernel_sock_ioctl(struct socket *sock, int cmd, unsigned long arg);
 extern int kernel_sock_shutdown(struct socket *sock,
 				enum sock_shutdown_cmd how);
+
+#if defined(CONFIG_TCP_ZERO_COPY_TRANSFER_COMPLETION_NOTIFICATION)
+/* Support for notification on zero-copy TCP transfer completion */
+typedef void (*net_get_page_callback_t)(struct page *page);
+typedef void (*net_put_page_callback_t)(struct page *page);
+
+extern net_get_page_callback_t net_get_page_callback;
+extern net_put_page_callback_t net_put_page_callback;
+
+extern int net_set_get_put_page_callbacks(
+	net_get_page_callback_t get_callback,
+	net_put_page_callback_t put_callback);
+
+/*
+ * See comment for net_set_get_put_page_callbacks() why those functions
+ * don't need any protection.
+ */
+static inline void net_get_page(struct page *page)
+{
+	if (page->net_priv != 0)
+		net_get_page_callback(page);
+	get_page(page);
+}
+static inline void net_put_page(struct page *page)
+{
+	if (page->net_priv != 0)
+		net_put_page_callback(page);
+	put_page(page);
+}
+#else
+static inline void net_get_page(struct page *page)
+{
+	get_page(page);
+}
+static inline void net_put_page(struct page *page)
+{
+	put_page(page);
+}
+#endif /* CONFIG_TCP_ZERO_COPY_TRANSFER_COMPLETION_NOTIFICATION */
 
 #define MODULE_ALIAS_NETPROTO(proto) \
 	MODULE_ALIAS("net-pf-" __stringify(proto))

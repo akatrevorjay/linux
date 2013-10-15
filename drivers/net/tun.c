@@ -1011,7 +1011,7 @@ static int zerocopy_sg_from_iovec(struct sk_buff *skb, const struct iovec *from,
 			int j;
 
 			for (j = 0; j < num_pages; j++)
-				put_page(page[i + j]);
+				net_put_page(page[i + j]);
 			return -EFAULT;
 		}
 		truesize = size * PAGE_SIZE;

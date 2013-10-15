@@ -795,6 +795,9 @@ extern int blk_rq_map_kern(struct request_queue *, struct request *, void *, uns
 extern int blk_rq_map_user_iov(struct request_queue *, struct request *,
 			       struct rq_map_data *, struct sg_iovec *, int,
 			       unsigned int, gfp_t);
+extern int blk_rq_map_kern_sg(struct request *rq, struct scatterlist *sgl,
+			      int nents, gfp_t gfp);
+extern void blk_rq_unmap_kern_sg(struct request *rq, int err);
 extern int blk_execute_rq(struct request_queue *, struct gendisk *,
 			  struct request *, int);
 extern void blk_execute_rq_nowait(struct request_queue *, struct gendisk *,
