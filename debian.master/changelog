@@ -1,12 +1,26 @@
 linux (3.11.0-12.19) saucy; urgency=low
 
+  [ Trevor Joynson ]
+
+  * Add solarsan flavour
+  * Do not compile hyperv tools as they don't compile
+  * Add debian logs into gitignore
+  * Add EDID for 2560x1440 and 2880x1800
+  * Update kernel configs
+  * Update configs
+  * Add trevorj flavour
+  * Add in SCST revision 5072
+  * Fix SCST in-kernel compile flags
+  * SCST Kernel config
+  * Add in ABI
+
   [ Andy Whitcroft ]
 
   * [Config] fix linux-libc-dev generation for arm64
   * [Config] fix linux-libc-dev generation for x32
   * [Config] add linux-libc-dev generation for ppc64el
 
- -- Andy Whitcroft <apw@canonical.com>  Wed, 09 Oct 2013 12:33:07 +0100
+ -- Trevor Joynson <trevorj@skywww.net>  Sat, 19 Oct 2013 01:57:00 -0400
 
 linux (3.11.0-12.18) saucy; urgency=low
 
