@@ -10,7 +10,7 @@ package_prefixes linux-image linux-image-extra
 
 getall armhf generic
 getall armhf generic-lpae
-getall amd64 generic solarsan
+getall amd64 generic solarsan trevorj
 getall i386 generic
 
 # Ports arches and flavours.
