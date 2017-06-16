@@ -62,6 +62,7 @@
 #include <linux/oom.h>
 #include <linux/compat.h>
 #include <linux/vmalloc.h>
+#include <linux/ksm.h>
 
 #include <trace/events/fs.h>
 
@@ -1353,6 +1354,7 @@ void setup_new_exec(struct linux_binprm * bprm)
 	/* An exec changes our domain. We are no longer part of the thread
 	   group */
 	current->self_exec_id++;
+
 	flush_signal_handlers(current, 0);
 }
 EXPORT_SYMBOL(setup_new_exec);
