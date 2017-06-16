@@ -1344,6 +1344,7 @@ glue_helper
 gma500_gfx
 g_mass_storage
 g_midi
+g_multi
 g_ncm
 g_nokia
 go7007
@@ -1752,6 +1753,7 @@ i7core_edac
 i82092
 i82975x_edac
 i915
+ia32_aout
 ib700wdt
 ib_cm
 ib_core
@@ -2897,6 +2899,7 @@ ns558
 ns83820
 nsc-ircc
 ntb
+ntb_hw_amd
 ntb_hw_intel
 ntb_netdev
 ntb_perf
@@ -2953,6 +2956,7 @@ opticon
 option
 or51132
 or51211
+orangefs
 orinoco
 orinoco_cs
 orinoco_nortel
@@ -3929,6 +3933,7 @@ snd-seq-dummy
 snd-seq-midi
 snd-seq-midi-emul
 snd-seq-midi-event
+snd-seq-oss
 snd-seq-virmidi
 snd-serial-u16550
 snd-skl_nau88l25_max98357a
