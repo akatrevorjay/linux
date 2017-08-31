@@ -1277,7 +1277,7 @@ int security_getprocattr(struct task_struct *p, const char *lsm, char *name,
 		if (lsm != NULL && strcmp(lsm, hp->lsm))
 			continue;
 		rc = hp->hook.getprocattr(p, name, value);
-		if (rc != -ENOENT)
+		if (rc != -ENOSYS)
 			return rc;
 	}
 	return -EINVAL;
@@ -1293,7 +1293,7 @@ int security_setprocattr(const char *lsm, const char *name, void *value,
 		if (lsm != NULL && strcmp(lsm, hp->lsm))
 			continue;
 		rc = hp->hook.setprocattr(name, value, size);
-		if (rc != -ENOENT)
+		if (rc)
 			return rc;
 	}
 	return -EINVAL;
