@@ -1,3 +1,24 @@
+linux (4.13.0-22.25) artful; urgency=low
+
+  * linux: 4.13.0-22.25 -proposed tracker (LP: #1738791)
+
+  * CVE-2017-15115
+    - sctp: do not peel off an assoc from one netns to another one
+
+  * CVE-2017-8824
+    - dccp: CVE-2017-8824: use-after-free in DCCP code
+
+ -- Thadeu Lima de Souza Cascardo <cascardo@canonical.com>  Tue, 19 Dec 2017 08:05:53 -0200
+
+linux (4.13.0-21.24) artful; urgency=low
+
+  * linux: 4.13.0-21.24 -proposed tracker (LP: #1738823)
+
+  * Ubuntu 17.10 corrupting BIOS - many LENOVO laptops models (LP: #1734147)
+    - [Config] CONFIG_SPI_INTEL_SPI_PLATFORM=n
+
+ -- Thadeu Lima de Souza Cascardo <cascardo@canonical.com>  Mon, 18 Dec 2017 14:13:33 -0200
+
 linux (4.13.0-19.22) artful; urgency=low
 
   * linux: 4.13.0-19.22 -proposed tracker (LP: #1736118)
